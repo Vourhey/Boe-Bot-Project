@@ -1,0 +1,8 @@
+It's a project for my graduation work.
+
+For the beginning, there're a bot (further more) and a camera.
+Also there's a destination. Now it's something red.
+
+boe-bot.bs2 - upload to the Boe-Bot's memory
+firstone.py - implements computer vision and calls main_f.cxx for work
+main_f.cxx  - connects to bot through XBee, sends and receives signals
