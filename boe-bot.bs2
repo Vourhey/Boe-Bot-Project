@@ -1,0 +1,63 @@
+' =========================================================================
+'
+'   {$STAMP BS2}
+'   {$PBASIC 2.5}
+'
+' =========================================================================
+
+' -----[ I/O Definitions ]-------------------------------------------------
+
+XBEE_TX         PIN  4                  'connect to DIN pin on XBee module
+XBEE_RX         PIN  3                  'connect to DOUT pin on XBee module
+
+
+' -----[ Constants ]-------------------------------------------------------
+
+MY_ID           CON  %01000000
+MASK_ID         CON  %11110000
+MASK_ID_FRM     CON  %00001111
+MASK_CMD        CON  %11000000
+MASK_PORT       CON  %00111100
+MASK_NMB        CON  %00000011
+BAUD_MODE       CON  6                '38400 Baud, 8n1 true
+
+
+
+
+' -----[ Variables ]-------------------------------------------------------
+
+RX_DATA         VAR  Byte(3)
+ID              VAR  Byte
+ID_FRM          VAR  Byte
+CMD             VAR  Byte
+PORT            VAR  Byte
+NMB             VAR  Word
+OUT             VAR  Word
+
+
+' -----[ Program Code ]----------------------------------------------------
+
+MAIN:
+  DO
+    SERIN XBEE_RX, BAUD_MODE, [STR RX_DATA\3] 'get data from the XBee
+    ID = MASK_ID & RX_DATA(0)
+    IF (ID = MY_ID)THEN
+      ID_FRM = MASK_ID_FRM & RX_DATA(0)
+      CMD = MASK_CMD & RX_DATA(1)
+      PORT = (MASK_PORT & RX_DATA(1)) >> 2
+      NMB = ((MASK_NMB & RX_DATA(1)) << 8) + RX_DATA(2)
+
+      SELECT CMD
+
+        CASE %0
+          PULSIN PORT, 1, OUT
+          SEROUT XBEE_TX, BAUD_MODE, [STR OUT]
+
+        CASE %01000000
+          PULSOUT PORT, NMB
+          SEROUT XBEE_TX, BAUD_MODE, [STR RX_DATA\1]
+
+      ENDSELECT
+    ENDIF
+  LOOP
+END
