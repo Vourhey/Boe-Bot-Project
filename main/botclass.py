@@ -15,6 +15,11 @@ class Bot:
     self.name = name
     self.ser = com #serial.Serial(com, 9600, timeout=0)
 
+  def __del__(self):
+    # uncoment when needed
+    #self.ser.close()
+    print "good bye {}".format(self.name)
+
   def setCenter(self, center):
     self.cx = center[0]
     self.cy = center[1]

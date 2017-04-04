@@ -85,16 +85,21 @@ def getDeltaAngle(bot):
   else:
     return delta
 
-# reading image
+#######################################################
+# Start of the program
+#######################################################
+
+cap = cv2.VideoCapture(0)
+
+"""# reading image
 img = cv2.imread('img\\07.jpg')
 # resizing to fit the display
-resized_image = cv2.resize(img, None, fx=0.15, fy=0.15, interpolation = cv2.INTER_CUBIC)
-resized_image = cv2.cvtColor(resized_image, cv2.COLOR_BGR2HSV)
+img = cv2.resize(img, None, fx=0.15, fy=0.15, interpolation = cv2.INTER_CUBIC)
+img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
-output = resized_image.copy()
+output = img.copy()
 
-cv2.imshow("ii", resized_image)
-cv2.waitKey(0)
+cv2.imshow("ii", img)"""
 
 # define main structure
 bots = []
@@ -110,70 +115,75 @@ color_boundaries = [
   ([65, 100, 80], [89, 178, 162])  # green
 ]
 
-# find bots and rectangles around them
-botsboundaries = [] # orange, yellow and green boxes
-for i in range(1, 4):
-  boundary = getboxes(output, color_boundaries[i], 1)
-  #bots[i-1].setCenter(center(boundary))
-  botsboundaries.append(boundary[0])
+while(True):
 
-# and find centers of bots
-for i in range(0,3):
-  bots[i].setCenter(center(botsboundaries[i]))
-  cv2.circle(resized_image, bots[i].getCenter(), 3, (0,255,0))
-  cv2.putText(resized_image, repr(bots[i].getCenter()), bots[i].getCenter(), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0,0,0))
+  ret, img = cap.read()
 
-# blue marks
-bluemarks = getboxes(output, color_boundaries[0], 3)
+  img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+  output = img.copy() # pass to functions
 
-# find centers of blue marks
-bluecenters = []
-for i in range(0, 3):
-  bluecenters.append(center(bluemarks[i]))
-  cv2.circle(resized_image, center(bluemarks[i]), 2, (0,0,255))
+  # find bots and rectangles around them and centers
+  # orange, yellow and green boxes
+  for i in range(1, 4):
+    boundary = getboxes(output, color_boundaries[i], 1)[0]
+    bots[i-1].setCenter(center(boundary))
+    cv2.circle(img, bots[i-1].getCenter(), 3, (0,255,0))
+    cv2.putText(img, repr(bots[i-1].getCenter()), bots[i-1].getCenter(), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0,0,0))
 
-cv2.drawContours(resized_image, bluemarks, -1, (255,0,0), 2)
-#cv2.imshow("ii", resized_image)
-#cv2.waitKey(0)
+  # blue marks
+  bluemarks = getboxes(output, color_boundaries[0], 3)
 
-# now I have to match nearest blue mark with its bot
-for idb in range(len(bots)):
-  tuplecenter = bots[idb].getCenter()
-  minlen = 10000000 # it a real big length
-  nearestbluedot = ()
-  for tupleblue in bluecenters:
-    length = calculateLength(tuplecenter, tupleblue)
-    if length < minlen:
-      nearestbluedot = tupleblue
-      minlen = length
+  # find centers of blue marks
+  bluecenters = []
+  for i in range(0, 3):
+    bluecenters.append(center(bluemarks[i]))
+    cv2.circle(img, center(bluemarks[i]), 2, (0,0,255))
 
-  bots[idb].setBlueMark(nearestbluedot)
+  #cv2.drawContours(img, bluemarks, -1, (255,0,0), 2)
+  #cv2.imshow("ii", img)
+  #cv2.waitKey(0)
 
-# now we have a right structure with centers of bots and directions
-# for every bot I calculate its direction (point)
+  # now I have to match nearest blue mark with its bot
+  for idb in range(len(bots)):
+    tuplecenter = bots[idb].getCenter()
+    minlen = 10000000 # it a real big length
+    nearestbluedot = ()
+    for tupleblue in bluecenters:
+      length = calculateLength(tuplecenter, tupleblue)
+      if length < minlen:
+        nearestbluedot = tupleblue
+        minlen = length
 
-bots[0].setDestination(calculateDestination(bots[1].getCenter(), bots[2].getCenter()))
-bots[1].setDestination(calculateDestination(bots[2].getCenter(), bots[0].getCenter()))
-bots[2].setDestination(calculateDestination(bots[0].getCenter(), bots[1].getCenter()))
+    bots[idb].setBlueMark(nearestbluedot)
 
-for bot in bots:
-  cv2.circle(resized_image, bot.getDestination(), 3, (0,255,0))
+  # now we have a right structure with centers of bots and directions
+  # for every bot I calculate its direction (point)
 
-cv2.imshow("ii", resized_image)
+  bots[0].setDestination(calculateDestination(bots[1].getCenter(), bots[2].getCenter()))
+  bots[1].setDestination(calculateDestination(bots[2].getCenter(), bots[0].getCenter()))
+  bots[2].setDestination(calculateDestination(bots[0].getCenter(), bots[1].getCenter()))
 
-# now I have to find angles between destination and bot's direction
-for bot in bots:
-  deltaangle = getDeltaAngle(bot)
+  # I could get rid of it
+  for bot in bots:
+    cv2.circle(img, bot.getDestination(), 3, (0,255,0))
 
-  print "for bot {} deltaangle is {}".format(bot.getCenter(), deltaangle)
+  cv2.imshow("ii", img)
 
-  if abs(deltaangle) < 5:
-    bot.moveForward() 
-  elif deltaangle > 0:
-    bot.moveRight()
-  else:
-    bot.moveLeft()
-  sleep(0.2)
+  # now I have to find angles between destination and bot's direction
+  for bot in bots:
+    deltaangle = getDeltaAngle(bot)
 
-cv2.waitKey(0)  
+    print "for bot {} deltaangle is {}".format(bot.getCenter(), deltaangle)
+
+    if abs(deltaangle) < 5:
+      bot.moveForward() 
+    elif deltaangle > 0:
+      bot.moveRight()
+    else:
+      bot.moveLeft()
+    sleep(0.2)
+
+  if cv2.waitKey(1) & 0xFF == ord('q'):
+    break
+
 cv2.destroyAllWindows()
