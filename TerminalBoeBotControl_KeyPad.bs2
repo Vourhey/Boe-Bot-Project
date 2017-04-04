@@ -1,0 +1,94 @@
+' TerminalBoeBotControl_Keypad.bs2
+' Moves the Boe-Bot based on the numbers 2, 4, 6, 8 or the
+' letters A, W, D, X.
+
+' {$STAMP BS2}
+' {$PBASIC 2.5}
+
+RX             PIN     14         ' RX of the Easy Bluetooth
+TX             PIN     15         ' TX of the Easy Bluetooth
+ltServo        PIN     13        ' Left Servo Pin
+rtServo        PIN     12        ' Right Servo Pin
+
+FwdLtFast      CON     850       ' Left servo forward full speed
+BwdLtFast      CON     650       ' Left servo backward full speed
+FwdRtFast      CON     650       ' Right servo forward full speed
+BwdRtFast      CON     850       ' Right servo backward full speed
+
+Baud           CON     84        ' Baud set at 9600
+
+myByte         VAR     Byte      ' Byte to establish connection
+index          VAR     Word      ' READ index/character storage
+character      VAR     Word
+
+dirChar        VAR     Word      ' Stores directional character
+counter        VAR     Word      ' Counter for FOR...NEXT loop
+
+DATA CLS,
+"              ", CR,            ' 14
+"              ", CR,            ' 28
+"       |      ", CR,            ' 42
+"     --o--    ", CR,            ' 56
+"       |      ", CR,            ' 70
+"              ", CR,            ' 84
+"              ", CR             ' 98
+
+PAUSE 250                        ' Waits 1/4 second
+SERIN RX, Baud, [myByte]         ' Waiting for byte
+myByte = 0                       ' Clear the byte value
+
+' Display background
+FOR index = 0 TO 99
+  READ index, character
+  SEROUT TX, Baud, [character]
+NEXT
+
+' Let user know the program is running
+SEROUT TX, BAUD, [CR, CR, "Program Running..."]
+
+DO
+  ' Recieve character from the PC
+  SERIN RX, Baud, [dirChar]
+
+  IF (dirChar = "8") OR (dirChar = "w") THEN
+    GOSUB Forward
+  ELSEIF (dirChar = "2") OR (dirChar = "s") THEN
+    GOSUB Backward
+  ELSEIF (dirChar = "4") OR (dirChar = "a") THEN
+    GOSUB Left
+  ELSEIF (dirChar = "6") OR (dirChar = "d") THEN
+    GOSUB Right
+  ENDIF
+LOOP
+
+Forward:
+  SEROUT TX, BAUD, [CRSRXY, 7, 0, "*", CRSRXY, 6, 1, "*", CRSRXY, 8, 1, "*"]
+  PULSOUT ltServo, FwdLtFast
+  PULSOUT rtServo, FwdRtFast
+  PAUSE 20
+  SEROUT TX, BAUD, [CRSRXY, 7, 0, " ", CRSRXY, 6, 1, " ", CRSRXY, 8, 1, " "]
+RETURN
+
+Backward:
+  SEROUT TX, BAUD, [CRSRXY, 7, 6, "*", CRSRXY, 6, 5, "*", CRSRXY, 8, 5, "*"]
+  PULSOUT ltServo, BwdLtFast
+  PULSOUT rtServo, BwdRtFast
+  PAUSE 20
+  SEROUT TX, BAUD, [CRSRXY, 7, 6, " ", CRSRXY, 6, 5, " ", CRSRXY, 8, 5, " "]
+RETURN
+
+Left:
+  SEROUT TX, BAUD, [CRSRXY, 3, 3, "*", CRSRXY, 4, 2, "*", CRSRXY, 4, 4, "*"]
+  PULSOUT ltServo, FwdRtFast
+  PULSOUT rtServo, FwdRtFast
+  PAUSE 20
+  SEROUT TX, BAUD, [CRSRXY, 3, 3, " ", CRSRXY, 4, 2, " ", CRSRXY, 4, 4, " "]
+RETURN
+
+Right:
+  SEROUT TX, BAUD, [CRSRXY, 11, 3, "*", CRSRXY, 10, 2, "*", CRSRXY, 10, 4, "*"]
+  PULSOUT ltServo, FwdLtFast
+  PULSOUT rtServo, FwdLtFast
+  PAUSE 20
+  SEROUT TX, BAUD, [CRSRXY, 11, 3, " ", CRSRXY, 10, 2, " ", CRSRXY, 10, 4, " "]
+RETURN
