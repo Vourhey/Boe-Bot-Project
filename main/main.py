@@ -16,6 +16,10 @@ def getboxes(img, b_tuple, count):
   
   contours, _ = cv2.findContours(mask.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
   contours = sorted(contours, key = cv2.contourArea, reverse = True)[:count]
+  #pprint(contours)
+
+  if len(contours) < count:
+    raise NameError('no contours!')
   
   # example of one box
   # box = array([[ 74, 318],
@@ -55,6 +59,12 @@ def getDeltaAngle(bot):
   (bx, by) = bot.getBlueCenter()
   (dx, dy) = bot.getDestination()
 
+  # to avoid division by zero 
+  if bx == cx:
+    bx += 1 
+  if dx == cx:
+    dx += 1
+
   bottan = float(-(by - cy))/(bx - cx)
   botangle = np.rad2deg(np.arctan(bottan))
 
@@ -90,6 +100,7 @@ def getDeltaAngle(bot):
 #######################################################
 
 cap = cv2.VideoCapture(0)
+out = cv2.VideoWriter('output.avi', -1, 20.0, (640,480))
 
 """# reading image
 img = cv2.imread('img\\07.jpg')
@@ -104,15 +115,15 @@ cv2.imshow("ii", img)"""
 # define main structure
 bots = []
 bots.append(Bot("orange", "COM3"))
-bots.append(Bot("yellow", "COM4"))
-bots.append(Bot("green", "COM5"))
+bots.append(Bot("yellow", "COM9"))
+bots.append(Bot("green", "COM8"))
 
 #define boundaries
 color_boundaries = [
-  ([90, 107, 93], [155, 217, 161]), # blue
-  ([0, 44, 117], [14, 168, 200]),  # orange
-  ([16, 100, 176], [65, 189, 238]), # yellow
-  ([65, 100, 80], [89, 178, 162])  # green
+  ([90, 138, 112], [121, 255, 197]), # blue
+  ([0, 44, 200], [14, 255, 255]),  # orange
+  ([16, 44, 201], [65, 255, 255]), # yellow
+  ([59, 58, 84], [89, 255, 255])  # green
 ]
 
 while(True):
@@ -124,20 +135,30 @@ while(True):
 
   # find bots and rectangles around them and centers
   # orange, yellow and green boxes
-  for i in range(1, 4):
-    boundary = getboxes(output, color_boundaries[i], 1)[0]
-    bots[i-1].setCenter(center(boundary))
-    cv2.circle(img, bots[i-1].getCenter(), 3, (0,255,0))
-    cv2.putText(img, repr(bots[i-1].getCenter()), bots[i-1].getCenter(), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0,0,0))
+  try:
+
+    for i in range(1, 4):
+      boundary = getboxes(output, color_boundaries[i], 1)[0]
+      bots[i-1].setCenter(center(boundary))
+      cv2.circle(img, bots[i-1].getCenter(), 5, (0,255,0))
+      cv2.putText(img, repr(bots[i-1].getCenter()), bots[i-1].getCenter(), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0,0,0))
+
+  except NameError:
+    continue
 
   # blue marks
-  bluemarks = getboxes(output, color_boundaries[0], 3)
+  try:
+
+    bluemarks = getboxes(output, color_boundaries[0], 3)
+
+  except NameError:
+    continue
 
   # find centers of blue marks
   bluecenters = []
   for i in range(0, 3):
     bluecenters.append(center(bluemarks[i]))
-    cv2.circle(img, center(bluemarks[i]), 2, (0,0,255))
+    #cv2.circle(img, center(bluemarks[i]), 2, (0,0,255))
 
   #cv2.drawContours(img, bluemarks, -1, (255,0,0), 2)
   #cv2.imshow("ii", img)
@@ -165,25 +186,30 @@ while(True):
 
   # I could get rid of it
   for bot in bots:
-    cv2.circle(img, bot.getDestination(), 3, (0,255,0))
+    cv2.circle(img, bot.getDestination(), 3, (0,255,255))
 
+  out.write(img)
   cv2.imshow("ii", img)
 
   # now I have to find angles between destination and bot's direction
   for bot in bots:
-    deltaangle = getDeltaAngle(bot)
+    if calculateLength(bot.getCenter(), bot.getDestination()) > 10:
+      deltaangle = getDeltaAngle(bot)
 
-    print "for bot {} deltaangle is {}".format(bot.getCenter(), deltaangle)
+      print "for bot {} deltaangle is {}".format(bot.getCenter(), deltaangle)
 
-    if abs(deltaangle) < 5:
-      bot.moveForward() 
-    elif deltaangle > 0:
-      bot.moveRight()
-    else:
-      bot.moveLeft()
+      if abs(deltaangle) < 5:
+        bot.moveForward() 
+      elif deltaangle > 0:
+        bot.moveRight()
+      else:
+        bot.moveLeft()
     sleep(0.2)
 
   if cv2.waitKey(1) & 0xFF == ord('q'):
     break
+
+cap.release()
+out.release()
 
 cv2.destroyAllWindows()
