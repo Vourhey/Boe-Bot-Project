@@ -74,6 +74,10 @@ cv2.namedWindow("output")
 cv2.resizeWindow("output", 640 , 480)
 out = cv2.VideoWriter('output.avi', -1, 20.0, (640,480))
 
+# file for store points
+pointsFile = open("coordinates.txt", "a")
+pointsFile.write('\n')
+
 bots = []
 bots.append(Bot(ID0, "COM3"))
 bots.append(Bot(ID1, "COM7"))
@@ -126,27 +130,26 @@ try:
     if length != 3:
       continue
 
-    # find destination points
-    bots[0].setDestination(calculateDestination(bots[1].getCenter(), bots[2].getCenter()))
-    point1 = bots[0].getCenter()
-    point1 = (int(point1[0] * WIDTH), int(point1[1] * HEIGHT))
-    point2 = bots[0].getDestination()
-    point2 = (int(point2[0] * WIDTH), int(point2[1] * HEIGHT))
-    cv2.line(img, point1, point2, (0,255,255), 2)
+    lengths_between_bots = []
+    for i in range(3):
+      length = calculateLength(bots[i % 3].getCenter(), bots[(i+1)%3].getCenter())
+      lengths_between_bots.append(length)
 
-    bots[1].setDestination(calculateDestination(bots[2].getCenter(), bots[0].getCenter()))
-    point1 = bots[1].getCenter()
-    point1 = (int(point1[0] * WIDTH), int(point1[1] * HEIGHT))
-    point2 = bots[1].getDestination()
-    point2 = (int(point2[0] * WIDTH), int(point2[1] * HEIGHT))
-    cv2.line(img, point1, point2, (0,255,255), 2)
+    if checkFormation(lengths_between_bots):  # formation is settled 
+      L = lengths_between_bots[0]
+    else:
+      # find destination points
+      for i in range(3):
+        center1 = bots[(i + 1) % 3].getCenter()
+        center2 = bots[(i + 2) % 3].getCenter()
+        bots[i].setDestination(calculateDestination(center1, center2))
 
-    bots[2].setDestination(calculateDestination(bots[0].getCenter(), bots[1].getCenter()))
-    point1 = bots[2].getCenter()
-    point1 = (int(point1[0] * WIDTH), int(point1[1] * HEIGHT))
-    point2 = bots[2].getDestination()
-    point2 = (int(point2[0] * WIDTH), int(point2[1] * HEIGHT))
-    cv2.line(img, point1, point2, (0,255,255), 2)
+        # debug information, for visualization
+        point1 = bots[i].getCenter()
+        point1 = (int(point1[0] * WIDTH), int(point1[1] * HEIGHT))
+        point2 = bots[i].getDestination()
+        point2 = (int(point2[0] * WIDTH), int(point2[1] * HEIGHT))
+        cv2.line(img, point1, point2, (0, 255, 255), 2)
 
     #cv2.imshow("output", img)
    # out.write(img)
@@ -157,7 +160,8 @@ try:
     wasrotation = False
     formationsready = False
     for bot in bots:
-      print "I'm in for bot in bots"
+      print "Writing bot's angle, center and destionation"
+      pointsFile.write("bot %d: %f (%f, %f) (%f, %f)" % (bot.id, bot.getAngle(), bot.getCenter(), bot.getDestination()))
       if calculateLength(bot.getCenter(), bot.getDestination()) > 0.2:
         deltaangle, destangle = getDeltaAngle(bot)
 
@@ -197,3 +201,4 @@ except KeyboardInterrupt:
 
 out.release()
 cv2.destroyAllWindows()
+pointsFile.close()
