@@ -54,3 +54,25 @@ def getDeltaAngle(bot):
   destangle = np.floor(destangle * 100) / 100
   
   return delta, destangle
+
+def checkFormation(lengths):
+  for i in range(3):
+    if not compare(lengths[i % 3], lengths[(i + 1) % 3]):
+      return False
+
+  return True
+
+# +- 5%
+def compare(l1, l2):
+  if l2 > (l1 * 0.95) and l2 < (l1 * 1.05):
+    return True
+
+  return False
+
+def getCenterOfTriangle(bots):
+  c1 = bots[0].getCenter()
+  c2 = bots[1].getCenter()
+  c3 = bots[2].getCenter()
+
+  tc = ((c1[0] + c2[0] + c3[0]) / 3, (c1[1] + c2[1] + c3[1]) / 3)
+  return tc

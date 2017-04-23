@@ -136,9 +136,20 @@ try:
       lengths_between_bots.append(length)
 
     if checkFormation(lengths_between_bots):  # formation is settled 
-      L = lengths_between_bots[0]
+      sideLength = lengths_between_bots[0]
+      triangleCenter = getCenterOfTriangle(bots)
+      destPoint = (0.8, 0.8) # is set by supervisor
+      L = calculateLength(triangleCenter, destPoint)
+      phi = np.arctan2(-(destPoint[1] - triangleCenter[1]), (destPoint[0] - triangleCenter[0]))
+      dx = L * np.cos(phi)
+      dy = L * np.sin(phi)
+
+      for i in range(3):
+        (x, y) = bots[i].getCenter()
+        bots[i].setDestination(x + dx, y + dy)
+
     else:
-      # find destination points
+      # find destination points by means of IET
       for i in range(3):
         center1 = bots[(i + 1) % 3].getCenter()
         center2 = bots[(i + 2) % 3].getCenter()
@@ -151,14 +162,7 @@ try:
         point2 = (int(point2[0] * WIDTH), int(point2[1] * HEIGHT))
         cv2.line(img, point1, point2, (0, 255, 255), 2)
 
-    #cv2.imshow("output", img)
-   # out.write(img)
-    #cv2.waitKey(100)
-
-    #print "Destinations id {}: {}; id {}: {}; id {}: {}".format(bots[0].id, bots[0].getDestination(), bots[1].id, bots[1].getDestination(), bots[2].id, bots[2].getDestination())
-
     wasrotation = False
-    formationsready = False
     for bot in bots:
       print "Writing bot's angle, center and destionation"
       pointsFile.write("bot %d: %f (%f, %f) (%f, %f)" % (bot.id, bot.getAngle(), bot.getCenter(), bot.getDestination()))
@@ -180,21 +184,14 @@ try:
           wasrotation = True
           time.sleep(0.1)
 
-    wasmoved = False
     if wasrotation == False:
       for bot in bots:
         if calculateLength(bot.getCenter(), bot.getDestination()) > 0.2:
           bot.moveForward()
-          wasmoved = True
 
     cv2.imshow("output", img)
     out.write(img)
-    cv2.waitKey(60)
-
-    if wasmoved == False:
-      formationsready = True
-      sidelength = calculateLength(bots[0].getCenter(), bots[1].getCenter())
-      
+    #cv2.waitKey(60)
 
 except KeyboardInterrupt:
   tracking.stop()
