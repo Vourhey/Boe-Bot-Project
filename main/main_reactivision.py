@@ -20,7 +20,7 @@ class Bot:
     self.ser = serial.Serial()
     self.ser.baudrate = 9600
     self.ser.port = com
-    self.ser.open()
+   # self.ser.open()
 
   def __del__(self):
     # uncoment when needed
@@ -62,9 +62,9 @@ class Bot:
     if self.ser.isOpen():
       self.ser.write('a')
 
-ID0 = 9
-ID1 = 10
-ID2 = 11
+ID0 = 3
+ID1 = 4
+ID2 = 6
 tracking = tuio.Tracking()
 #print "loaded profiles:", tracking.profiles.keys()
 #print "list functions to access tracked objects:", tracking.get_helpers()
@@ -72,7 +72,7 @@ tracking = tuio.Tracking()
 img = np.zeros((HEIGHT, WIDTH, 3), np.uint8)
 cv2.namedWindow("output")
 cv2.resizeWindow("output", 640 , 480)
-out = cv2.VideoWriter('output.avi', -1, 20.0, (640,480))
+out = cv2.VideoWriter('output.avi', -1, 5.0, (640,480))
 
 # file for store points
 pointsFile = open("coordinates.txt", "a")
@@ -96,32 +96,25 @@ try:
 
     # find centers
     length = 0
+    cid = 0
     for obj in tracking.objects():
       print "id: {} X, Y = ({}, {}), angle = {}".format(obj.id, obj.xpos, obj.ypos, obj.angle)
       if obj.id == ID0:
-        bots[0].setCenter(obj.xpos, obj.ypos)
-        bots[0].setAngle(translateAngle(obj.angle))
-        point1 = bots[0].getCenter()
-        point1 = [int(point1[0] * WIDTH), int(point1[1] * HEIGHT)]
-        cv2.line(img, tuple(point1), tuple(getSecondPointForLine(bots[0].getCenter(), bots[0].getAngle())), (255,0,0), 2)
-        cv2.putText(img, "%.2f" % bots[0].getAngle(), tuple(point1), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0,0,0))
+        cid = 0
         length += 1
       elif obj.id == ID1:
-        bots[1].setCenter(obj.xpos, obj.ypos)
-        bots[1].setAngle(translateAngle(obj.angle))
-        point1 = bots[1].getCenter()
-        point1 = [int(point1[0] * WIDTH), int(point1[1] * HEIGHT)]
-        cv2.line(img, tuple(point1), tuple(getSecondPointForLine(bots[1].getCenter(), bots[1].getAngle())), (255,0,0), 2)
-        cv2.putText(img, "%.2f" % bots[1].getAngle(), tuple(point1), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0,0,0))
+        cid = 1
         length += 1
-      else:
-        bots[2].setCenter(obj.xpos, obj.ypos)
-        bots[2].setAngle(translateAngle(obj.angle))
-        point1 = bots[2].getCenter()
-        point1 = [int(point1[0] * WIDTH), int(point1[1] * HEIGHT)]
-        cv2.line(img, tuple(point1), tuple(getSecondPointForLine(bots[2].getCenter(), bots[2].getAngle())), (255,0,0), 2)
-        cv2.putText(img, "%.2f" % bots[2].getAngle(), tuple(point1), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0,0,0))
+      elif obj.id == ID2:
+        cid = 2
         length += 1
+
+      bots[cid].setCenter(obj.xpos, obj.ypos)
+      bots[cid].setAngle(translateAngle(obj.angle))
+      point1 = bots[cid].getCenter()
+      point1 = [int(point1[0] * WIDTH), HEIGHT - int(point1[1] * HEIGHT)]
+      cv2.line(img, tuple(point1), tuple(getSecondPointForLine(bots[cid].getCenter(), bots[cid].getAngle())), (255,0,0), 2)
+      cv2.putText(img, "%.2f" % bots[cid].getAngle(), tuple(point1), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0,0,0))
 
   #  print "After for obj loop. length is {}".format(length)
     #time.sleep(0.2)
@@ -146,7 +139,7 @@ try:
 
       for i in range(3):
         (x, y) = bots[i].getCenter()
-        bots[i].setDestination(x + dx, y + dy)
+        bots[i].setDestination((x + dx, y + dy))
 
     else:
       # find destination points by means of IET
@@ -157,21 +150,21 @@ try:
 
         # debug information, for visualization
         point1 = bots[i].getCenter()
-        point1 = (int(point1[0] * WIDTH), int(point1[1] * HEIGHT))
+        point1 = (int(point1[0] * WIDTH), HEIGHT - int(point1[1] * HEIGHT))
         point2 = bots[i].getDestination()
-        point2 = (int(point2[0] * WIDTH), int(point2[1] * HEIGHT))
+        point2 = (int(point2[0] * WIDTH), HEIGHT - int(point2[1] * HEIGHT))
         cv2.line(img, point1, point2, (0, 255, 255), 2)
 
     wasrotation = False
     for bot in bots:
       print "Writing bot's angle, center and destionation"
-      pointsFile.write("bot %d: %f (%f, %f) (%f, %f)" % (bot.id, bot.getAngle(), bot.getCenter(), bot.getDestination()))
+      pointsFile.write("bot {}: {} {} {}\n".format(bot.id, bot.getAngle(), bot.getCenter(), bot.getDestination()))
       if calculateLength(bot.getCenter(), bot.getDestination()) > 0.2:
         deltaangle, destangle = getDeltaAngle(bot)
 
         print "id: {} C:{} D:{} deltaangle is {}".format(bot.id, bot.getCenter(), bot.getDestination(), deltaangle)
         point = bot.getDestination()
-        point = (int(point[0] * WIDTH), int(point[1] * HEIGHT))
+        point = (int(point[0] * WIDTH), HEIGHT - int(point[1] * HEIGHT))
         cv2.putText(img, "%.2f" % destangle, point, cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0,0,0))
 
         if deltaangle > 10:
@@ -191,7 +184,7 @@ try:
 
     cv2.imshow("output", img)
     out.write(img)
-    #cv2.waitKey(60)
+    cv2.waitKey(60)
 
 except KeyboardInterrupt:
   tracking.stop()
