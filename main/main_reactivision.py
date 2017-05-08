@@ -76,7 +76,7 @@ out = cv2.VideoWriter('output.avi', -1, 5.0, (640,480))
 
 # file for store points
 pointsFile = open("coordinates.txt", "a")
-pointsFile.write('\n')
+pointsFile.write('bot\tangle\tCX\tCY\tDX\tDY\n')
 
 bots = []
 bots.append(Bot(ID0, "COM3"))
@@ -128,7 +128,10 @@ try:
       length = calculateLength(bots[i % 3].getCenter(), bots[(i+1)%3].getCenter())
       lengths_between_bots.append(length)
 
+    print lengths_between_bots
+
     if checkFormation(lengths_between_bots):  # formation is settled 
+      print "Formation's ready!"
       sideLength = lengths_between_bots[0]
       triangleCenter = getCenterOfTriangle(bots)
       destPoint = (0.8, 0.8) # is set by supervisor
@@ -141,7 +144,13 @@ try:
         (x, y) = bots[i].getCenter()
         bots[i].setDestination((x + dx, y + dy))
 
+        # for visualization
+        point1 = (int(x * WIDTH), HEIGHT - int(y * HEIGHT))
+        point2 = (int((x+dx) * WIDTH), HEIGHT - int((y+dy) * HEIGHT))
+        cv2.line(img, point1, point2, (0, 255, 255), 2)
+
     else:
+      print "Working on formation..."
       # find destination points by means of IET
       for i in range(3):
         center1 = bots[(i + 1) % 3].getCenter()
@@ -158,11 +167,13 @@ try:
     wasrotation = False
     for bot in bots:
       print "Writing bot's angle, center and destionation"
-      pointsFile.write("bot {}: {} {} {}\n".format(bot.id, bot.getAngle(), bot.getCenter(), bot.getDestination()))
-      if calculateLength(bot.getCenter(), bot.getDestination()) > 0.2:
+      (CX, CY) = bot.getCenter()
+      (DX, DY) = bot.getDestination()
+      pointsFile.write("{}\t{}\t{}\t{}\t{}\t{}\n".format(bot.id, bot.getAngle(), CX, CY, DX, DY))
+      if calculateLength(bot.getCenter(), bot.getDestination()) > 0.1:
         deltaangle, destangle = getDeltaAngle(bot)
 
-        print "id: {} C:{} D:{} deltaangle is {}".format(bot.id, bot.getCenter(), bot.getDestination(), deltaangle)
+        print "id {} deltaangle is {}".format(bot.id, deltaangle)
         point = bot.getDestination()
         point = (int(point[0] * WIDTH), HEIGHT - int(point[1] * HEIGHT))
         cv2.putText(img, "%.2f" % destangle, point, cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0,0,0))

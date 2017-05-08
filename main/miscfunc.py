@@ -41,7 +41,7 @@ def getDeltaAngle(bot):
 
  # destangle = translateAngle(destangle)
 
-  print "destangle is {}".format(destangle)
+  #print "destangle is {}".format(destangle)
   
 
   delta = botangle - destangle
@@ -63,9 +63,9 @@ def checkFormation(lengths):
 
   return True
 
-# +- 5%
+# +- 10%
 def compare(l1, l2):
-  if l2 > (l1 * 0.95) and l2 < (l1 * 1.05):
+  if l2 > (l1 * 0.85) and l2 < (l1 * 1.15):
     return True
 
   return False
