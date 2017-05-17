@@ -66,16 +66,17 @@ def calculateDestination(point1, point2):
   return (x3, y3)
 
 # reading image
-img = cv2.imread('img\\3.jpg')
+img = cv2.imread('img\\13.jpg')
 # resizing to fit the display
-resized_image = cv2.resize(img, None, fx=0.1, fy=0.1, interpolation = cv2.INTER_CUBIC)
+#resized_image = cv2.resize(img, None, fx=0.1, fy=0.1, interpolation = cv2.INTER_CUBIC)
+resized_image = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
 
 #define boundaries
 boundaries = [
-  ([150, 50, 0], [220, 155, 35]), # blue
-  ([50, 110, 200], [110, 140, 255]),  # orange
-  ([0, 170, 170], [40, 230, 240]), # yellow
-  ([70, 130, 2], [150, 185, 85])  # green
+  ([101, 35, 94], [190, 229, 148]), # blue
+  ([0, 40, 140], [16, 199, 196]),  # orange
+  ([19, 40, 140], [42, 199, 196]), # yellow
+  ([75, 93, 0], [96, 250, 247])  # green
 ]
 
 # blue marks

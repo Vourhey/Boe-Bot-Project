@@ -13,7 +13,7 @@ class Bot:
 
   def __init__(self, name, com):
     self.name = name
-    self.ser = serial.Serial(com, 9600, timeout=0)
+    #self.ser = serial.Serial(com, 9600, timeout=0)
 
   def __del__(self):
     # uncoment when needed
@@ -43,12 +43,12 @@ class Bot:
 
   def moveForward(self):
     print "moving forward"
-    self.ser.write('w')
+    #self.ser.write('w')
 
   def moveRight(self):
     print "moving right"
-    self.ser.write('d')
+    #self.ser.write('d')
 
   def moveLeft(self):
     print "moving left"
-    self.ser.write('a')
+    #self.ser.write('a')

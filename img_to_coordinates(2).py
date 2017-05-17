@@ -43,7 +43,7 @@ def center(b):
   return (cx,cy)
 
 # reading image
-img = cv2.imread('img\\6.jpg')
+img = cv2.imread('img\\13.jpg')
 # resizing to fit the display
 resized_image = cv2.resize(img, None, fx=0.1, fy=0.1, interpolation = cv2.INTER_CUBIC)
 

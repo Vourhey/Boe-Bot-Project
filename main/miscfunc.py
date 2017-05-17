@@ -65,7 +65,7 @@ def checkFormation(lengths):
 
 # +- 10%
 def compare(l1, l2):
-  if l2 > (l1 * 0.85) and l2 < (l1 * 1.15):
+  if l2 > (l1 * 0.8) and l2 < (l1 * 1.2):
     return True
 
   return False

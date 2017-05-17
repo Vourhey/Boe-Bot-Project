@@ -99,18 +99,18 @@ def getDeltaAngle(bot):
 # Start of the program
 #######################################################
 
-cap = cv2.VideoCapture(0)
-out = cv2.VideoWriter('output.avi', -1, 20.0, (640,480))
+#cap = cv2.VideoCapture(0)
+#out = cv2.VideoWriter('output.avi', -1, 20.0, (640,480))
 
-"""# reading image
+# reading image
 img = cv2.imread('img\\07.jpg')
 # resizing to fit the display
 img = cv2.resize(img, None, fx=0.15, fy=0.15, interpolation = cv2.INTER_CUBIC)
-img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+#img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
-output = img.copy()
+originimg = img.copy()
 
-cv2.imshow("ii", img)"""
+cv2.imshow("ii", img)
 
 # define main structure
 bots = []
@@ -120,96 +120,99 @@ bots.append(Bot("green", "COM8"))
 
 #define boundaries
 color_boundaries = [
-  ([90, 138, 112], [121, 255, 197]), # blue
-  ([0, 44, 200], [14, 255, 255]),  # orange
-  ([16, 44, 201], [65, 255, 255]), # yellow
-  ([59, 58, 84], [89, 255, 255])  # green
+  ([101, 35, 94], [190, 229, 148]), # blue
+  ([0, 40, 140], [16, 199, 196]),  # orange
+  ([19, 40, 140], [42, 199, 196]), # yellow
+  ([75, 93, 0], [96, 250, 247])  # green
 ]
 
-while(True):
+#while(True):
 
-  ret, img = cap.read()
+  #ret, img = cap.read()
 
-  img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-  output = img.copy() # pass to functions
+img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+output = img.copy() # pass to functions
 
-  # find bots and rectangles around them and centers
-  # orange, yellow and green boxes
-  try:
 
-    for i in range(1, 4):
-      boundary = getboxes(output, color_boundaries[i], 1)[0]
-      bots[i-1].setCenter(center(boundary))
-      cv2.circle(img, bots[i-1].getCenter(), 5, (0,255,0))
-      cv2.putText(img, repr(bots[i-1].getCenter()), bots[i-1].getCenter(), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0,0,0))
+# find bots and rectangles around them and centers
+# orange, yellow and green boxes
+try:
 
-  except NameError:
-    continue
+  for i in range(1, 4):
+    boundary = getboxes(output, color_boundaries[i], 1)[0]
+    bots[i-1].setCenter(center(boundary))
+    cv2.circle(originimg, bots[i-1].getCenter(), 5, (0,255,0), -1)
+    cv2.putText(originimg, repr(bots[i-1].getCenter()), bots[i-1].getCenter(), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0,0,0))
 
-  # blue marks
-  try:
+except NameError:
+  print "error"
 
-    bluemarks = getboxes(output, color_boundaries[0], 3)
+# blue marks
+try:
 
-  except NameError:
-    continue
+  bluemarks = getboxes(output, color_boundaries[0], 3)
 
-  # find centers of blue marks
-  bluecenters = []
-  for i in range(0, 3):
-    bluecenters.append(center(bluemarks[i]))
-    #cv2.circle(img, center(bluemarks[i]), 2, (0,0,255))
+except NameError:
+  print "error"
 
-  #cv2.drawContours(img, bluemarks, -1, (255,0,0), 2)
-  #cv2.imshow("ii", img)
-  #cv2.waitKey(0)
+# find centers of blue marks
+bluecenters = []
+for i in range(0, 3):
+  bluecenters.append(center(bluemarks[i]))
+  cv2.circle(originimg, center(bluemarks[i]), 2, (0,0,255), -1)
+  cv2.putText(originimg, repr(center(bluemarks[i])), center(bluemarks[i]), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0,0,0))
 
-  # now I have to match nearest blue mark with its bot
-  for idb in range(len(bots)):
-    tuplecenter = bots[idb].getCenter()
-    minlen = 10000000 # it a real big length
-    nearestbluedot = ()
-    for tupleblue in bluecenters:
-      length = calculateLength(tuplecenter, tupleblue)
-      if length < minlen:
-        nearestbluedot = tupleblue
-        minlen = length
+#cv2.drawContours(img, bluemarks, -1, (255,0,0), 2)
+#cv2.imshow("ii", img)
+#cv2.waitKey(0)
 
-    bots[idb].setBlueMark(nearestbluedot)
+# now I have to match nearest blue mark with its bot
+for idb in range(len(bots)):
+  tuplecenter = bots[idb].getCenter()
+  minlen = 10000000 # it a real big length
+  nearestbluedot = ()
+  for tupleblue in bluecenters:
+    length = calculateLength(tuplecenter, tupleblue)
+    if length < minlen:
+      nearestbluedot = tupleblue
+      minlen = length
 
-  # now we have a right structure with centers of bots and directions
-  # for every bot I calculate its direction (point)
+  bots[idb].setBlueMark(nearestbluedot)
 
-  bots[0].setDestination(calculateDestination(bots[1].getCenter(), bots[2].getCenter()))
-  bots[1].setDestination(calculateDestination(bots[2].getCenter(), bots[0].getCenter()))
-  bots[2].setDestination(calculateDestination(bots[0].getCenter(), bots[1].getCenter()))
+# now we have a right structure with centers of bots and directions
+# for every bot I calculate its direction (point)
 
-  # I could get rid of it
-  for bot in bots:
-    cv2.circle(img, bot.getDestination(), 3, (0,255,255))
+bots[0].setDestination(calculateDestination(bots[1].getCenter(), bots[2].getCenter()))
+bots[1].setDestination(calculateDestination(bots[2].getCenter(), bots[0].getCenter()))
+bots[2].setDestination(calculateDestination(bots[0].getCenter(), bots[1].getCenter()))
 
-  out.write(img)
-  cv2.imshow("ii", img)
+# I could get rid of it
+for bot in bots:
+  cv2.circle(originimg, bot.getDestination(), 3, (0,255,255), -1)
 
-  # now I have to find angles between destination and bot's direction
-  for bot in bots:
-    if calculateLength(bot.getCenter(), bot.getDestination()) > 10:
-      deltaangle = getDeltaAngle(bot)
+#out.write(img)
+cv2.imshow("ii", originimg)
+#cv2.waitKey(60)
 
-      print "for bot {} deltaangle is {}".format(bot.getCenter(), deltaangle)
+# now I have to find angles between destination and bot's direction
+"""
+for bot in bots:
+  if calculateLength(bot.getCenter(), bot.getDestination()) > 10:
+    deltaangle = getDeltaAngle(bot)
 
-      if abs(deltaangle) < 5:
-        bot.moveForward() 
-      elif deltaangle > 0:
-        bot.moveRight()
-      else:
-        bot.moveLeft()
-    sleep(0.2)
+    print "for bot {} deltaangle is {}".format(bot.getCenter(), deltaangle)
 
-  if cv2.waitKey(1) & 0xFF == ord('q'):
-    break
+    if abs(deltaangle) < 5:
+      bot.moveForward() 
+    elif deltaangle > 0:
+      bot.moveRight()
+    else:
+      bot.moveLeft()
+  sleep(0.2)"""
 
-cap.release()
-out.release()
+cv2.waitKey()
+
+#cap.release()
+#out.release()
 
 cv2.destroyAllWindows()

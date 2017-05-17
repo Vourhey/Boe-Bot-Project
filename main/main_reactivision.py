@@ -15,12 +15,14 @@ class Bot:
     dx, dy = destionation point
   """
 
+  backward = False
+
   def __init__(self, id, com):
     self.id = id
     self.ser = serial.Serial()
     self.ser.baudrate = 9600
     self.ser.port = com
-   # self.ser.open()
+    self.ser.open()
 
   def __del__(self):
     # uncoment when needed
@@ -52,6 +54,11 @@ class Bot:
     if self.ser.isOpen():
       self.ser.write('w')
 
+  def moveBackward(self):
+    print "moving backward"
+    if self.ser.isOpen():
+      self.ser.write('s')
+
   def moveRight(self):
     print "moving right"
     if self.ser.isOpen():
@@ -63,8 +70,8 @@ class Bot:
       self.ser.write('a')
 
 ID0 = 3
-ID1 = 4
-ID2 = 6
+ID1 = 6
+ID2 = 4
 tracking = tuio.Tracking()
 #print "loaded profiles:", tracking.profiles.keys()
 #print "list functions to access tracked objects:", tracking.get_helpers()
@@ -80,8 +87,8 @@ pointsFile.write('bot\tangle\tCX\tCY\tDX\tDY\n')
 
 bots = []
 bots.append(Bot(ID0, "COM3"))
-bots.append(Bot(ID1, "COM7"))
-bots.append(Bot(ID2, "COM9"))
+bots.append(Bot(ID1, "COM6"))
+bots.append(Bot(ID2, "COM7"))
 
 formationsready = False
 
@@ -134,7 +141,7 @@ try:
       print "Formation's ready!"
       sideLength = lengths_between_bots[0]
       triangleCenter = getCenterOfTriangle(bots)
-      destPoint = (0.8, 0.8) # is set by supervisor
+      destPoint = (0.6, 0.6) # is set by supervisor
       L = calculateLength(triangleCenter, destPoint)
       phi = np.arctan2(-(destPoint[1] - triangleCenter[1]), (destPoint[0] - triangleCenter[0]))
       dx = L * np.cos(phi)
@@ -170,6 +177,7 @@ try:
       (CX, CY) = bot.getCenter()
       (DX, DY) = bot.getDestination()
       pointsFile.write("{}\t{}\t{}\t{}\t{}\t{}\n".format(bot.id, bot.getAngle(), CX, CY, DX, DY))
+      bot.backward = False
       if calculateLength(bot.getCenter(), bot.getDestination()) > 0.1:
         deltaangle, destangle = getDeltaAngle(bot)
 
@@ -177,6 +185,13 @@ try:
         point = bot.getDestination()
         point = (int(point[0] * WIDTH), HEIGHT - int(point[1] * HEIGHT))
         cv2.putText(img, "%.2f" % destangle, point, cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0,0,0))
+
+        if deltaangle > 90:
+          deltaangle = deltaangle - 180
+          bot.backward = True
+        if deltaangle < -90:
+          deltaangle = deltaangle + 180
+          bot.backward = True
 
         if deltaangle > 10:
           bot.moveRight()
@@ -190,12 +205,15 @@ try:
 
     if wasrotation == False:
       for bot in bots:
-        if calculateLength(bot.getCenter(), bot.getDestination()) > 0.2:
-          bot.moveForward()
+        if calculateLength(bot.getCenter(), bot.getDestination()) > 0.1:
+          if bot.backward:
+            bot.moveBackward()
+          else:
+            bot.moveForward()
 
     cv2.imshow("output", img)
     out.write(img)
-    cv2.waitKey(60)
+    cv2.waitKey(10)
 
 except KeyboardInterrupt:
   tracking.stop()
